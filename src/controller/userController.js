@@ -1,5 +1,5 @@
 import userModel from "../model/userModel.js";
-import { genPassword,passwordCompare,genJWTToken } from "../authUtils/authUtils.js";
+import { genPassword, passwordCompare, genJWTToken } from "../authUtils/authUtils.js";
 
 const register = async (req, res) => {
     try {
@@ -27,19 +27,27 @@ const register = async (req, res) => {
     }
 }
 
-const login = async (req,res) => {
-    try{
-        const {} = req.body;
-
-
+const login = async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const getUserDataDb = await userModel.findOne({ username, deleted: false });
+        if (!getUserDataDb) {
+            res.status(403).json({ message: "invalid credential" });
+        }
+        const isPassword = await passwordCompare(password, getUserDataDb?.password);
+        if (!isPassword) {
+            res.status(403).json({ message: "invalid credential" });
+        }
+        const token = genJWTToken({ id: getUserDataDb?._id });
+        res.status(200).json({
+            token,
+            metaData: getUserDataDb?._id,
+        })
     }
-    catch(e){
-
+    catch (e) {
+        res.status(404).json({ error: e.message });
     }
-
 }
 
+export { register, login };
 
-
-
-export { register,login };
